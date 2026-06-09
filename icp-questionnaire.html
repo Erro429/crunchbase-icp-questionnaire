@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICP Discovery - unleeshAI</title>
+<style>
+  :root{
+    --ink:#0d1b2a; --ink-soft:#33485e; --paper:#f3efe6; --paper-2:#ece6d8;
+    --line:#d6cdb9; --gold:#b8893a; --gold-deep:#8a6322; --signal:#2f5d50;
+    --white:#fffdf8; --shadow:0 1px 0 #fff,0 12px 30px -18px rgba(13,27,42,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.5; padding:0 20px 80px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  header{padding:56px 0 28px;border-bottom:2px solid var(--ink)}
+  .kicker{font-family:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:14px;display:flex;gap:10px;align-items:center}
+  .kicker::after{content:"";flex:1;height:1px;background:var(--line)}
+  h1{font-size:clamp(34px,7vw,54px);line-height:1.02;font-weight:600;letter-spacing:-.01em}
+  h1 em{font-style:italic;color:var(--gold-deep)}
+  .lede{margin-top:18px;font-size:18px;color:var(--ink-soft);max-width:54ch}
+  .progress{position:sticky;top:0;z-index:5;background:var(--paper);padding:14px 0 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;font-family:"DM Mono",ui-monospace,monospace;font-size:12px}
+  .bar{flex:1;height:6px;background:var(--paper-2);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-deep));transition:width .4s ease}
+  .pct{color:var(--gold-deep);min-width:40px;text-align:right}
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;gap:16px;align-items:baseline;margin-bottom:8px}
+  .sec-num{font-family:"DM Mono",ui-monospace,monospace;font-size:13px;color:var(--white);background:var(--ink);border-radius:6px;padding:4px 9px;letter-spacing:.05em;flex:none}
+  .sec-head.sig .sec-num{background:var(--signal)}
+  h2{font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .sec-sub{color:var(--ink-soft);margin:6px 0 26px;font-size:15px}
+  .q{margin-bottom:30px}
+  label.qlabel{display:block;font-size:17px;font-weight:600;margin-bottom:4px}
+  .hint{font-size:13.5px;color:var(--ink-soft);margin-bottom:12px}
+  input[type=text],input[type=email],textarea,select{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
+  textarea{min-height:84px;resize:vertical;line-height:1.45}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,137,58,.18)}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{font-size:14.5px;padding:9px 15px;border:1px solid var(--line);border-radius:99px;background:var(--white);cursor:pointer;user-select:none;transition:all .15s}
+  .chip:hover{border-color:var(--gold)}
+  .chip.on{background:var(--ink);color:var(--white);border-color:var(--ink)}
+  .sig .chip.on{background:var(--signal);border-color:var(--signal)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+  .range-row{display:flex;align-items:center;gap:12px}
+  .range-row span{font-family:"DM Mono",monospace;font-size:13px;color:var(--ink-soft);white-space:nowrap}
+  .actions{padding:40px 0;text-align:center}
+  button.go{font-family:inherit;font-size:18px;font-weight:600;color:var(--white);background:var(--ink);border:none;border-radius:10px;padding:16px 40px;cursor:pointer;box-shadow:0 10px 24px -12px rgba(13,27,42,.6);transition:transform .15s,background .2s}
+  button.go:hover{background:var(--gold-deep);transform:translateY(-2px)}
+  .note{font-size:13px;color:var(--ink-soft);margin-top:14px}
+  #summary{display:none;margin-top:30px}
+  .summary-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:30px;box-shadow:var(--shadow)}
+  .summary-card h3{font-size:13px;font-family:"DM Mono",monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);margin:22px 0 8px}
+  .summary-card h3:first-child{margin-top:0}
+  .summary-card p{color:var(--ink-soft);font-size:15px}
+  .summary-card .val{color:var(--ink);font-weight:600}
+  .copybtn{margin-top:22px;font-family:"DM Mono",monospace;font-size:13px;background:var(--paper-2);border:1px solid var(--line);border-radius:7px;padding:9px 16px;cursor:pointer}
+  .copybtn:hover{border-color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">unleeshAI · ICP discovery</div>
+    <h1>Let's find the people<br>most likely to <em>say yes</em>.</h1>
+    <p class="lede">A focused set of questions about who buys from you and when. Your answers build the targeting and the buying signals we watch, so the very first list we pull is aimed at your real buyer, not a guess.</p>
+  </header>
+
+  <div class="progress">
+    <span>Progress</span>
+    <div class="bar"><i id="barfill"></i></div>
+    <span class="pct" id="pct">0%</span>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>The company you sell to</h2></div>
+    <p class="sec-sub">Firmographics. The hard filters that decide who lands on your list.</p>
+
+    <div class="q">
+      <label class="qlabel">What does your best customer actually do?</label>
+      <p class="hint">In plain words. "Independent CPG snack brands selling into grocery," not just "food." The specifics are what make targeting tight.</p>
+      <textarea data-q="What the best customer does" placeholder="e.g. Regional food and beverage brands selling into grocery and specialty retail"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Which industries or niches fit best?</label>
+      <p class="hint">List the ones you win in most. If there are sub-niches inside a broad category, name them.</p>
+      <textarea data-q="Industries / niches" placeholder="e.g. Specialty food, craft beverage, better-for-you snacks, DTC wellness"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Company size that fits best</label>
+      <p class="hint">Pick every band where you win deals.</p>
+      <div class="chips" data-multi data-q="Employee size bands">
+        <div class="chip">1 to 10</div><div class="chip">11 to 50</div><div class="chip">51 to 200</div>
+        <div class="chip">201 to 500</div><div class="chip">501 to 1,000</div><div class="chip">1,000+</div>
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Revenue range, if it matters</label>
+      <p class="hint">Skip if revenue isn't a deciding factor.</p>
+      <div class="range-row">
+        <span>From</span><input type="text" data-q="Revenue floor" placeholder="$1M">
+        <span>to</span><input type="text" data-q="Revenue ceiling" placeholder="$50M">
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Where are they?</label>
+      <p class="hint">Countries, states, or metros. Tighter is better.</p>
+      <input type="text" data-q="Geography" placeholder="e.g. United States, California, Colorado, Washington">
+    </div>
+
+    <div class="q">
+      <label class="qlabel">What's their business model?</label>
+      <p class="hint">How they make money often predicts fit better than industry.</p>
+      <div class="chips" data-multi data-q="Business model">
+        <div class="chip">B2B</div><div class="chip">B2C</div><div class="chip">DTC</div>
+        <div class="chip">Retail / wholesale</div><div class="chip">SaaS / subscription</div>
+        <div class="chip">Services / agency</div><div class="chip">Marketplace</div><div class="chip">Brick-and-mortar</div>
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">How mature should they be?</label>
+      <p class="hint">Stage shapes budget, urgency, and how they buy.</p>
+      <div class="chips" data-multi data-q="Company stage">
+        <div class="chip">Pre-revenue / startup</div><div class="chip">Early growth</div>
+        <div class="chip">Established / scaling</div><div class="chip">Mature / enterprise</div>
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Any hard disqualifiers?</label>
+      <p class="hint">The industries, sizes, or types you never want in a list. Saves us both the wasted sends.</p>
+      <textarea data-q="Disqualifiers" placeholder="e.g. No enterprise, no agencies reselling, no pre-revenue startups"></textarea>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>The person who decides</h2></div>
+    <p class="sec-sub">Persona. The titles, seniority, and roles we actually reach out to.</p>
+
+    <div class="q">
+      <label class="qlabel">Whose problem do you solve?</label>
+      <p class="hint">List the exact titles of people who feel the pain. Add the ones who sign too, if different.</p>
+      <textarea data-q="Target titles" placeholder="e.g. Owner, CEO, VP of Sales, Head of Growth, Director of Marketing"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Seniority you need at the table</label>
+      <div class="chips" data-multi data-q="Seniority">
+        <div class="chip">Owner / Founder</div><div class="chip">C-Suite</div><div class="chip">VP</div>
+        <div class="chip">Director</div><div class="chip">Manager</div><div class="chip">Individual contributor</div>
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Which department owns the budget?</label>
+      <p class="hint">The person who feels the pain isn't always the one who pays. Tell us both if they differ.</p>
+      <input type="text" data-q="Budget owner" placeholder="e.g. Marketing feels it, but the founder signs the check">
+    </div>
+
+    <div class="q">
+      <label class="qlabel">How many people touch the decision?</label>
+      <p class="hint">Solo founder call versus a committee changes the whole approach.</p>
+      <div class="chips" data-q="Decision complexity">
+        <div class="chip">One person decides</div><div class="chip">Two or three</div>
+        <div class="chip">Full buying committee</div><div class="chip">Not sure</div>
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Who is the wrong contact?</label>
+      <p class="hint">The title that looks right but wastes the cycle. We exclude them up front.</p>
+      <input type="text" data-q="Wrong contact" placeholder="e.g. Interns, junior coordinators, IT when we sell to marketing">
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>The problem and the stakes</h2></div>
+    <p class="sec-sub">Why they buy. This sharpens both the targeting and the message.</p>
+
+    <div class="q">
+      <label class="qlabel">What painful problem do you solve for them?</label>
+      <p class="hint">In their words, not yours. The thing that keeps them up at night.</p>
+      <textarea data-q="Core problem" placeholder="e.g. Their pipeline is unpredictable and they rely on referrals that dried up"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">What does it cost them to ignore it?</label>
+      <p class="hint">Lost revenue, wasted hours, missed growth. The cost of doing nothing is your real competition.</p>
+      <textarea data-q="Cost of inaction" placeholder="e.g. Every quiet month is roughly thousands in deals they never even saw"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">What are they doing about it today?</label>
+      <p class="hint">Their current fix, even if it's a spreadsheet, a freelancer, or nothing. Tells us who you're really replacing.</p>
+      <input type="text" data-q="Current solution" placeholder="e.g. A part-time VA, a tool they barely use, or word of mouth">
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Who else could they buy from?</label>
+      <p class="hint">Direct competitors and the "do it ourselves" option. Shapes how we position you.</p>
+      <input type="text" data-q="Alternatives" placeholder="e.g. In-house hire, an agency, or a cheaper DIY tool">
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head sig"><span class="sec-num">04</span><h2>The signal that says "now"</h2></div>
+    <p class="sec-sub">A perfect-fit company isn't always ready. A signal tells us <em>when</em> to show up. Catch it early and you arrive with the answer instead of a cold pitch.</p>
+
+    <div class="q sig">
+      <label class="qlabel">What's usually happening when a deal goes well?</label>
+      <p class="hint">Think about your last few good clients. What changed right before they bought? That moment is the signal.</p>
+      <textarea data-q="Trigger moment" placeholder="e.g. They just hired a head of sales, or launched a new product line, or got new funding"></textarea>
+    </div>
+
+    <div class="q sig">
+      <label class="qlabel">Which of these signals fit your buyer?</label>
+      <p class="hint">Pick any we should monitor. These are timing triggers we track across the web and inside conversations.</p>
+      <div class="chips sig" data-multi data-q="Signals to monitor">
+        <div class="chip">Hiring for a relevant role</div>
+        <div class="chip">New funding raised</div>
+        <div class="chip">Leadership change</div>
+        <div class="chip">Headcount growth</div>
+        <div class="chip">New product or location</div>
+        <div class="chip">Tech stack change</div>
+        <div class="chip">Recent press or award</div>
+        <div class="chip">Job posting language</div>
+        <div class="chip">Expanding to new market</div>
+        <div class="chip">M&amp;A activity</div>
+      </div>
+    </div>
+
+    <div class="q sig">
+      <label class="qlabel">What does a job post reveal?</label>
+      <p class="hint">Often the strongest signal hides in who they're hiring. A small agency posting a "BD hire" is telling you they want pipeline. What hire means "they need you"?</p>
+      <textarea data-q="Job-posting signal" placeholder="e.g. When they post for a sales rep but have no CRM, they need our system"></textarea>
+    </div>
+
+    <div class="q sig">
+      <label class="qlabel">What's the worst time to reach them?</label>
+      <p class="hint">Negative signals matter too. When are they too busy, too new, or too locked in to care?</p>
+      <input type="text" data-q="Negative signal" placeholder="e.g. Mid-rebrand, just signed a competitor, peak season">
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Proof and priorities</h2></div>
+    <p class="sec-sub">So the list ranks by who we can win, not just who fits.</p>
+
+    <div class="q">
+      <label class="qlabel">Name two or three dream-fit accounts.</label>
+      <p class="hint">Real companies you'd love more of. We reverse-engineer the pattern from them.</p>
+      <textarea data-q="Dream accounts" placeholder="e.g. Rusty's Chips, Piroshky Piroshky, Marczyk Fine Foods"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">Who is your single worst-fit customer?</label>
+      <p class="hint">The client you regret taking. Naming the anti-pattern keeps them off the list.</p>
+      <textarea data-q="Worst-fit customer" placeholder="e.g. Price-shoppers who churn in 60 days and never use the product"></textarea>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">What's your average deal size and sales cycle?</label>
+      <p class="hint">Helps us prioritize the accounts worth the most effort.</p>
+      <div class="grid2">
+        <input type="text" data-q="Average deal size" placeholder="Avg deal: e.g. 3K/mo retainer">
+        <input type="text" data-q="Sales cycle" placeholder="Cycle: e.g. 2 to 4 weeks">
+      </div>
+    </div>
+
+    <div class="q">
+      <label class="qlabel">What do you sell them, in one line?</label>
+      <input type="text" data-q="Offer" placeholder="e.g. Done-for-you cold email pipeline that books qualified calls">
+    </div>
+
+    <div class="grid2">
+      <div class="q">
+        <label class="qlabel">Your name</label>
+        <input type="text" data-q="Contact name" placeholder="Full name">
+      </div>
+      <div class="q">
+        <label class="qlabel">Email for the build</label>
+        <input type="email" data-q="Contact email" placeholder="you@company.com">
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="go" id="submit">Build my ICP brief</button>
+    <p class="note">No account needed. You'll get a clean summary you can copy and send straight to us.</p>
+  </div>
+
+  <div id="summary">
+    <div class="summary-card" id="summaryCard"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const fields = Array.from(document.querySelectorAll('[data-q]'));
+  const barfill = document.getElementById('barfill');
+  const pct = document.getElementById('pct');
+
+  document.querySelectorAll('.chips').forEach(group=>{
+    group.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click',()=>{
+        if(!group.hasAttribute('data-multi')){
+          group.querySelectorAll('.chip').forEach(c=>{ if(c!==chip) c.classList.remove('on'); });
+        }
+        chip.classList.toggle('on'); update();
+      });
+    });
+  });
+  fields.forEach(f=>{ if(f.tagName!=='DIV') f.addEventListener('input',update); });
+
+  function valueOf(f){
+    if(f.tagName==='DIV'){
+      return [...f.querySelectorAll('.chip.on')].map(c=>c.textContent.trim()).join(', ');
+    }
+    return f.value.trim();
+  }
+  function filled(f){ return valueOf(f).length>0; }
+
+  function update(){
+    const total=fields.length;
+    const done=fields.filter(filled).length;
+    const p=Math.round(done/total*100);
+    barfill.style.width=p+'%';
+    pct.textContent=p+'%';
+  }
+
+  const SHEETS_URL='https://script.google.com/macros/s/AKfycbwzdAreSvtHCB1_mKeUo4DMe73wZKPAifUO4W6Yj6Zwcwi8dosb7uu50h6DRLq_fAo/exec';
+
+  document.getElementById('submit').addEventListener('click', async ()=>{
+    const btn=document.getElementById('submit');
+    const data=fields.map(f=>({q:f.getAttribute('data-q'),a:valueOf(f)}));
+    const groups={
+      'The company you sell to':['What the best customer does','Industries / niches','Employee size bands','Revenue floor','Revenue ceiling','Geography','Business model','Company stage','Disqualifiers'],
+      'The person who decides':['Target titles','Seniority','Budget owner','Decision complexity','Wrong contact'],
+      'The problem and the stakes':['Core problem','Cost of inaction','Current solution','Alternatives'],
+      'Buying signals to monitor':['Trigger moment','Signals to monitor','Job-posting signal','Negative signal'],
+      'Proof and priorities':['Dream accounts','Worst-fit customer','Average deal size','Sales cycle','Offer','Contact name','Contact email']
+    };
+    const map=Object.fromEntries(data.map(d=>[d.q,d.a]));
+
+    btn.textContent='Sending…';
+    btn.disabled=true;
+
+    try{
+      await fetch(SHEETS_URL,{
+        method:'POST',
+        mode:'no-cors',
+        body:JSON.stringify(Object.assign({},map,{'Submitted At':new Date().toISOString()}))
+      });
+      btn.textContent='Submitted';
+    }catch(err){
+      btn.textContent='Build my ICP brief';
+      btn.disabled=false;
+    }
+
+    let html='';
+    let plain='ICP DISCOVERY BRIEF\n====================\n\n';
+    for(const [title,keys] of Object.entries(groups)){
+      html+='<h3>'+title+'</h3>';
+      plain+=title.toUpperCase()+'\n';
+      keys.forEach(k=>{
+        if(k==='Revenue ceiling') return;
+        if(k==='Revenue floor'){
+          const range=(map['Revenue floor']||'-')+' to '+(map['Revenue ceiling']||'-');
+          html+='<p>Revenue: <span class="val">'+range+'</span></p>';
+          plain+='Revenue: '+range+'\n';
+        }else{
+          const v=map[k]||'-';
+          html+='<p>'+k+': <span class="val">'+v+'</span></p>';
+          plain+=k+': '+v+'\n';
+        }
+      });
+      plain+='\n';
+    }
+    const card=document.getElementById('summaryCard');
+    card.innerHTML=html+'<button class="copybtn" id="copy">Copy brief to clipboard</button>';
+    document.getElementById('summary').style.display='block';
+    document.getElementById('summary').scrollIntoView({behavior:'smooth'});
+    document.getElementById('copy').addEventListener('click',function(){
+      navigator.clipboard.writeText(plain).then(()=>{this.textContent='Copied';});
+    });
+  });
+})();
+</script>
+</body>
+</html>
